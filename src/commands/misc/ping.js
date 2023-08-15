@@ -1,6 +1,6 @@
 module.exports = {
-  name: 'ping',
-  description: 'Pong!',
+  name: "ping",
+  description: "Pong!",
   // devOnly: Boolean,
   testOnly: true,
   // options: Object[],
