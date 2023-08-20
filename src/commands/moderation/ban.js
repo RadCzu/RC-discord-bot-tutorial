@@ -67,7 +67,7 @@ module.exports = {
     console.log(`bot's rank allows the ban`);
 
     try {
-      await targetUser.kick({reason: reason});
+      await targetUser.ban({reason: reason});
       await interaction.reply(`@${targetUser.nickname} go away!!! \n reason: ${reason}`);
     } catch (error) {
       console.log(error);
