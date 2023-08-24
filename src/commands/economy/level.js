@@ -1,64 +1,84 @@
-const {Client, Interaction, ApplicationCommandOptionType} = require("discord.js");
-const Level = require("../../models/level");
+const {Client, Interaction, ApplicationCommandOptionType, AttachmentBuilder} = require("discord.js");
+const Level = require("../../models/Level");
 const canvacord = require("canvacord");
 const calculateLevelXp = require("../../utils/calculateLevelXp");
 
-/**
- * @param {Client} client
- * @param {Interaction} interaction
- */
-module.export = {
+
+module.exports = {
+
+  /**
+   * @param {Client} client
+   * @param {Interaction} interaction
+   */
+
   callback: async (client, interaction) => {
-    if(!interaction.inGuild()) {
-      interaction.reply("you can only run this command inside a server");
+    if (!interaction.inGuild()) {
+      interaction.reply('You can only run this command inside a server.');
+      return;
+    }
+
+    if (!interaction.guild) {
+      interaction.reply('You can only run this command inside a server.');
       return;
     }
 
     await interaction.deferReply();
 
-    const mentionUserId = inetaction.option.get("target-user").value;
-    const targetUserId = mentionUserId || interaction.member.id;
+    const mentionedUserId = interaction.options.get('target-user')?.value;
+    const targetUserId = mentionedUserId || interaction.member.id;
     const targetUserObj = await interaction.guild.members.fetch(targetUserId);
 
     const fetchedLevel = await Level.findOne({
       userId: targetUserId,
       guildId: interaction.guild.id,
-    })
-    if(!fetchedLevel) {
-      interaction.editReply( mentionUserId ? ` ${targetUserObj.user.tag} does not have a level yet` : `you dont have any levels yet` );
+    });
+
+    if (!fetchedLevel) {
+      interaction.editReply(
+        mentionedUserId
+          ? `${targetUserObj.user.tag} doesn't have any levels yet. Try again when they chat a little more.`
+          : "You don't have any levels yet. Chat a little more and try again."
+      );
       return;
     }
 
-    let allLevels = await Level.find({ guildId: interaction.guild.id }).select(`-_id userId level xp`);
+    let allLevels = await Level.find({ guildId: interaction.guild.id }).select(
+      '-_id userId level xp'
+    );
 
-    allLevels.sort((a,b) => {
-      if(a.level === b.level) {
+    allLevels.sort((a, b) => {
+      if (a.level === b.level) {
         return b.xp - a.xp;
       } else {
         return b.level - a.level;
       }
-
     });
 
-    let currentRank = allLevels.find((lvl) => lvl.userId === targetUserId) + 1;
+    let currentRank = allLevels.findIndex((lvl) => lvl.userId === targetUserId) + 1;
 
     const rank = new canvacord.Rank()
-      .setAvatar(targetUserObj.user.displayAvatarUrl({size: 256}))
+      .setAvatar(targetUserObj.user.displayAvatarURL({ size: 256 }))
       .setRank(currentRank)
       .setLevel(fetchedLevel.level)
       .setCurrentXP(fetchedLevel.xp)
       .setRequiredXP(calculateLevelXp(fetchedLevel.level))
-      .setStatus()
+      .setStatus(targetUserObj.presence.status)
+      .setProgressBar('#aa24e3', 'COLOR')
+      .setUsername(targetUserObj.user.username)
+      .setDiscriminator(targetUserObj.user.discriminator);
 
-    
+    const data = await rank.build();
+    const attachment = new AttachmentBuilder(data);
+    interaction.editReply({ files: [attachment] });
   },
-  name: "level",
-  desctiprion: "shows a user's level",
+
+  name: 'level',
+  description: "Shows your/someone's level.",
   options: [
     {
-      name: "target-user",
-      description: "the user whose level you want to see",
+      name: 'target-user',
+      description: 'The user whose level you want to see.',
       type: ApplicationCommandOptionType.Mentionable,
     },
   ],
-}
+};

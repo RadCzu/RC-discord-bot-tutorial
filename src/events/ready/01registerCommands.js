@@ -17,7 +17,6 @@ module.exports = async (client) => {
       const existingCommand = await applicationCommands.cache.find(
         (cmd) => cmd.name === name
       );
-
       if (existingCommand) {
         if (localCommand.deleted) {
           await applicationCommands.delete(existingCommand.id);
@@ -35,7 +34,6 @@ module.exports = async (client) => {
         }
         console.log(`command ${name} is correct`);
       } else {
-
         if (localCommand.deleted) {
           console.log(`registration of command ${name} was skipped`);
           continue;
